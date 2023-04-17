@@ -2,6 +2,10 @@ from fastapi import FastAPI, HTTPException
 import pandas as pd 
 from typing import Optional
 import uvicorn  
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.utils.extmath import randomized_svd
+from sklearn.feature_extraction.text import  TfidfVectorizer
+import numpy as np 
 
 
 
@@ -108,8 +112,54 @@ def get_contents(rating:str):
    cantidad= datos_filtrados['rating'].value_counts()[rating]
    return cantidad.item()
 
+####Creacion del Modelo de recomendaciones
+
+user_item = df_total[['show_id', 'title','score','description']] #Utilizamos solo estas 4 columnas
+user_item.reset_index(drop=True) #Reseteamos el indice
+user_item = user_item.head(10000) # Cortamos los datos a 10000
+
+#### Creamos la matriz de similitud del coseno 
+
+# Vectorizador TfidfVectorizer con parámetros de reduccion procesamiento
+vectorizer = TfidfVectorizer(min_df=10, max_df=0.5, ngram_range=(1,2))
+
+# Vectorizar, ajustar y transformar el texto de la columna "title" del DataFrame
+X = vectorizer.fit_transform(user_item['title'])
+
+# Calcular la matriz de similitud de coseno con una matriz reducida de 7000
+similarity_matrix = cosine_similarity(X[:7000,:])
+
+# Obtener la descomposición en valores singulares aleatoria de la matriz de similitud de coseno con 10 componentes
+n_components = 10
+U, Sigma, VT = randomized_svd(similarity_matrix, n_components=n_components)
+
+# Construir la matriz reducida de similitud de coseno
+reduced_similarity_matrix = U.dot(np.diag(Sigma)).dot(VT)
+
+
+
+####Creamo la funcion utilizando la matriz 'reduce_similarity_matrix'
+#Consulta 7 
+@app.get('/get_recomendation/{titulo}')
+def get_recommendation(titulo: str):
+    try:
+        #Ubicamos el indice del titulo pasado como parametro en la columna 'title' del dts user_item
+        indice = np.where(user_item['title'] == titulo)[0][0]
+        #Encontramos los indices de las puntuaciones y caracteristicas similares del titulo 
+        puntuaciones_similitud = reduced_similarity_matrix[indice,:]
+        #Ordenamos los indices de menor a mayor
+        puntuacion_ordenada = np.argsort(puntuaciones_similitud)[::-1]
+        #seleccionamos solo 5 
+        top_indices = puntuacion_ordenada[:5]
+        #retornamos los 5 items con sus titulos como una lista
+        return user_item.loc[top_indices, 'title'].tolist()
+        #Si el titulo dado no se encuentra damos un aviso
+    except IndexError:
+        print(f"El título '{titulo}' no se encuentra en la base de datos. Intente con otro título.")
+ 
 
 
 if __name__ == "_main_":
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    
