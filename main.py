@@ -78,10 +78,12 @@ def get_actor(platform:str, year:int):
    df_total = pd.read_csv('platform_movies_scores.csv')
    #seleccionamos los registros para cada atributo
    df_filter = df_total.loc[(df_total['Plataforma']==platform) & (df_total['release_year']== year)]
+   #Obtenemos un solo actor de la lista en columna 'cast'
+   df_filter['cast'] = df_filter['cast'].str.split(',')
    #Contamos el actor que mas se repite segun plataforma y año
    conteo_actores = df_filter['cast'].value_counts()
-   #Retornamos los actores que mas se repiten segun el año y la plataforma
-   return conteo_actores.idxmax()
+   actor_contado = conteo_actores.idxmax()[0]
+   return actor_contado
 
 # Consulta 5
 @app.get('/prod_per_county/{tipo}/{pais}/{anio}')
