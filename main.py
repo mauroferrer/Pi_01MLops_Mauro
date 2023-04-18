@@ -130,7 +130,7 @@ vectorizer = TfidfVectorizer(min_df=10, max_df=0.5, ngram_range=(1,2))
 X = vectorizer.fit_transform(user_item['title'])
 
 # Calcular la matriz de similitud de coseno con una matriz reducida de 7000
-similarity_matrix = cosine_similarity(X[:7000,:])
+similarity_matrix = cosine_similarity(X[:1250,:])
 
 # Obtener la descomposición en valores singulares aleatoria de la matriz de similitud de coseno con 10 componentes
 n_components = 10
