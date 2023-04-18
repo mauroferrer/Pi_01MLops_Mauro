@@ -7,6 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity #Utilizamos para obtener 
 from sklearn.utils.extmath import randomized_svd # Utilizamos SVD para desponer nuestra matriz 
 from sklearn.feature_extraction.text import  TfidfVectorizer #Utilizamos para vectorizar datos tipo texto y convertirlos en una representacion numerica
 import numpy as np # Manejo de matrices, array, etc
+import sklearn 
 
 
 
