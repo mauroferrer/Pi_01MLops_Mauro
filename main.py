@@ -1,15 +1,16 @@
-from fastapi import FastAPI, HTTPException
-import pandas as pd 
+####Importamos librerias 
+from fastapi import FastAPI, HTTPException #Para crear la api
+import pandas as pd # Manejo de dataframes 
 from typing import Optional
-import uvicorn  
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.utils.extmath import randomized_svd
-from sklearn.feature_extraction.text import  TfidfVectorizer
-import numpy as np 
+import uvicorn  # Para correr nuestra API
+from sklearn.metrics.pairwise import cosine_similarity #Utilizamos para obtener la similitud del coseno 
+from sklearn.utils.extmath import randomized_svd # Utilizamos SVD para desponer nuestra matriz 
+from sklearn.feature_extraction.text import  TfidfVectorizer #Utilizamos para vectorizar datos tipo texto y convertirlos en una representacion numerica
+import numpy as np # Manejo de matrices, array, etc
 
 
 
-
+#### IMPORTAMOS EL DATASETS CON SUS TRANSFORMACIONES HECHAS Y SUS PLATAFORMAS CONCATENADAS
 df_total = pd.read_csv('platform_movies_scores.csv')
 
 ### CREACION DE API
@@ -31,20 +32,20 @@ def menu():
     return "Las funciones utilizadas: get_max_duration, get_score_count, get_count_platform, get_actor, prod_per_county, get_contents "
 
 
-
+### Consulta en donde obtenemos la pelicula que mas dura segun nuestros parametros seleccionados
 @app.get("/get_max_duration/{year}/{plataform}/{tipo}")
-def get_max_duration(year: int,plataform: str,tipo: str):
- df_total = pd.read_csv('platform_movies_scores.csv')    
- peliculas_filtradas = df_total[(df_total['release_year'] == year) & (df_total['Plataforma'] == plataform) & (df_total['duration_type'] == tipo)]
- pelicula_mas_larga = df_total.loc[peliculas_filtradas['duration_int'].idxmax()]
- return 'pelicula_mas_larga:',pelicula_mas_larga['title']
+def get_max_duration(year: int,plataform: str,tipo: str):# Definimos funcion
+ df_total = pd.read_csv('platform_movies_scores.csv')    #Creamos variable con los datos
+ peliculas_filtradas = df_total[(df_total['release_year'] == year) & (df_total['Plataforma'] == plataform) & (df_total['duration_type'] == tipo)] #Asignamos los valores correspondientes a cada parametro
+ pelicula_mas_larga = df_total.loc[peliculas_filtradas['duration_int'].idxmax()] # Obtenemos la pelicula con mayor duracion
+ return 'pelicula_mas_larga:',pelicula_mas_larga['title'] # Devolvemos solo el titulo de esa pelicula que mas dura
 
 
 
 
-
+#Consulta nro 2
 @app.get("/get_score_count/{platform}/{scored}/{year}")
-def get_score_count(platform: str, scored: float, year: int):
+def get_score_count(platform: str, scored: float, year: int): # Definimos funcion
     df_total = pd.read_csv('platform_movies_scores.csv')
     #Sleccionamos los registros que corresponden al año y al puntaje especificado
     df_filtered = df_total.loc[(df_total['release_year'] == year) & (df_total['score'] > scored)]
@@ -59,7 +60,7 @@ def get_score_count(platform: str, scored: float, year: int):
     return count
 
 
-
+#Consulta 3
 @app.get("/get_count_platform/{platform}")
 def get_count_platform(platform:str):
     df_total = pd.read_csv('platform_movies_scores.csv')
@@ -71,7 +72,7 @@ def get_count_platform(platform:str):
     cantidad = df_movies['Plataforma'].value_counts()[platform]
     return cantidad.item()
 
-
+#Consulta 4
 @app.get("/get_actor/{platform}/{year}")
 def get_actor(platform:str, year:int):
    df_total = pd.read_csv('platform_movies_scores.csv')
@@ -82,6 +83,7 @@ def get_actor(platform:str, year:int):
    #Retornamos los actores que mas se repiten segun el año y la plataforma
    return conteo_actores.idxmax()
 
+# Consulta 5
 @app.get('/prod_per_county/{tipo}/{pais}/{anio}')
 def prod_per_county(tipo: str, pais: str, anio: int):
     df_total = pd.read_csv('platform_movies_scores.csv')
@@ -112,13 +114,13 @@ def get_contents(rating:str):
    cantidad= datos_filtrados['rating'].value_counts()[rating]
    return cantidad.item()
 
-####Creacion del Modelo de recomendaciones
+#### CREACION DEL MODELO DE RECOMENDACIONES ####
 
 user_item = df_total[['show_id', 'title','score','description']] #Utilizamos solo estas 4 columnas
 user_item.reset_index(drop=True) #Reseteamos el indice
 user_item = user_item.head(10000) # Cortamos los datos a 10000
 
-#### Creamos la matriz de similitud del coseno 
+#### Creamos la matriz de similitud del coseno ####
 
 # Vectorizador TfidfVectorizer con parámetros de reduccion procesamiento
 vectorizer = TfidfVectorizer(min_df=10, max_df=0.5, ngram_range=(1,2))
